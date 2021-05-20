@@ -1,1 +1,7 @@
 .history/
+
+uploads/images/*
+uploads/videos/*
+
+!uploads/images/.gitkeep 
+!uploads/vidoes/.gitkeep 

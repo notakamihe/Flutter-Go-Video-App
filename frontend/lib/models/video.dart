@@ -1,9 +1,23 @@
 class Video {
-  int id;
+  String id;
   String title;
   String description;
-  String videoUrl;
+  DateTime createdOn;
+  List<String> likes;
+  String fileUrl;
   String coverUrl;
+  int views;
+  Object user;
 
-  Video(this.title, this.description, this.videoUrl, this.coverUrl);
+  Video(
+    this.id, 
+    this.title, 
+    this.description, 
+    this.createdOn, 
+    this.likes, 
+    this.fileUrl, 
+    this.coverUrl,
+    this.views,
+    this.user
+  );
 }
