@@ -1,5 +1,9 @@
+import 'dart:convert';
+
 import "package:flutter/material.dart";
 import 'package:frontend/components/video.dart';
+import 'package:frontend/models/video.dart';
+import 'package:http/http.dart' as http;
 
 class ExploreView extends StatefulWidget {
   @override
@@ -7,23 +11,27 @@ class ExploreView extends StatefulWidget {
 }
 
 class _ExploreViewState extends State<ExploreView> {
-  int batchSize = 10;
-  List<VideoView> videos = [];
+  int batchSize = 8;
+  List<Video> videos = [];
 
   @override
   void initState() {
     super.initState();
     this.loadVideos();
   }
-
   Future<void> loadVideos() async {
-    setState(() {
-      this.videos = [];
+    setState(() {this.videos = [];});
 
-      for (int i = 0; i < batchSize; i++) {
-        this.videos = [...this.videos, new VideoView()];
-      }
-    });
+    try {
+      var response = await http.get(Uri.http("localhost:8000", "/api/videos/random/$batchSize"));
+      List<dynamic> resArray = await json.decode(response.body);
+
+      setState(() {
+        this.videos = resArray.map((x) => Video.fromJson(x)).toList();
+      });
+    } catch (e) {
+      print(e);
+    }
   }
 
   @override
@@ -38,7 +46,7 @@ class _ExploreViewState extends State<ExploreView> {
               child: Wrap(
                 children: [
                   for (var video in videos) 
-                    video
+                    VideoComponent(video: video,)
                 ],
               ),
             )

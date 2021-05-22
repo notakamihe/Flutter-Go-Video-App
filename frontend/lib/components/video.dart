@@ -1,20 +1,25 @@
 import "package:flutter/material.dart";
+import 'package:frontend/models/video.dart';
 import 'package:video_player/video_player.dart';
 import 'package:frontend/views/video_detail.dart';
 
-class VideoView extends StatefulWidget {
+class VideoComponent extends StatefulWidget {
+  final Video video;
+
+  VideoComponent({Key key, this.video}): super(key: key);
+
   @override
-  _VideoViewState createState() => _VideoViewState();
+  _VideoComponentState createState() => _VideoComponentState();
 }
 
-class _VideoViewState extends State<VideoView> {
+class _VideoComponentState extends State<VideoComponent> {
   VideoPlayerController _controller;
   Future<void> _initializeVideoPlayerFuture;
 
   @override
   void initState() {
      _controller = VideoPlayerController.network(
-      'https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4',
+      "http://localhost:8000/uploads/${widget.video.fileUrl}",
     );
 
     _initializeVideoPlayerFuture = _controller.initialize();
@@ -39,8 +44,8 @@ class _VideoViewState extends State<VideoView> {
           _controller.play();
         }
       },
-      onLongPress: () {
-        Navigator.push(context, MaterialPageRoute(builder: (context) => VideoDetailView()));
+      onDoubleTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => VideoDetailView(video: widget.video,)));
       },
       child: Container(
         width: MediaQuery.of(context).size.width * 0.45,
@@ -78,7 +83,7 @@ class _VideoViewState extends State<VideoView> {
                   Padding(padding: EdgeInsets.only(right: 8)),
                   Row(
                     children: [
-                      Text("3K"),
+                      Text(widget.video.views.toString()),
                       Padding(padding: EdgeInsets.only(right: 4)),
                       Icon(Icons.remove_red_eye, size: 16,),
                     ],
@@ -86,7 +91,7 @@ class _VideoViewState extends State<VideoView> {
                   Padding(padding: EdgeInsets.only(right: 12)),
                   Row(
                     children: [
-                      Text("1K"),
+                      Text(widget.video.likes.length.toString()),
                       Padding(padding: EdgeInsets.only(right: 4)),
                       Icon(Icons.favorite, size: 16,),
                     ],

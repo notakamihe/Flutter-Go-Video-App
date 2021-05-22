@@ -9,11 +9,16 @@ class User {
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json["id"],
+      id: json["_id"].toString(),
       name: json["name"],
       email: json["email"],
       password: json["password"],
-      createdOn: json["createdOn"],
+      createdOn: DateTime.parse(json["createdOn"] != null ? json["createdOn"] : json["createdon"]),
     );
+  }
+
+  @override
+  String toString() {
+    return "User(id: ${this.id}, name: ${this.name}, email: ${this.email}, password: ${this.password}, createdOn: ${this.createdOn}, )";
   }
 }

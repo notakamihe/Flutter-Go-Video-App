@@ -1,5 +1,10 @@
+import 'dart:convert';
+
 import "package:flutter/material.dart";
 import 'package:frontend/components/error.dart';
+import 'package:frontend/models/user.dart';
+import 'package:frontend/services/user_service.dart';
+import 'package:http/http.dart' as http;
 
 class EditProfileView extends StatefulWidget {
   @override
@@ -12,10 +17,42 @@ class _EditProfileViewState extends State<EditProfileView> {
 
   String error;
 
-  void handleEditProfile() {
-    setState(() {
-      this.error = null;
-    });
+  @override
+  void initState() {
+    this._nameField.text = UserService.user.name;
+    this._emailField.text = UserService.user.email;
+
+    super.initState();
+  }
+
+  void handleEditProfile() async {
+    setState(() {this.error = null;});
+
+    var response = await http.put(
+      Uri.http("localhost:8000", "/api/users/${UserService.user?.id}"),
+      body: jsonEncode(<String, dynamic>{
+        "name": _nameField.text,
+        "email": _emailField.text,
+      })
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      switch (response.statusCode) {
+        case 400:
+          setState(() {this.error = response.body.trim();});
+          break;
+        default:
+          print(response.body);
+          setState(() {this.error = "Server error";});
+          break;
+      }
+
+      return;
+    }
+    
+    var json = await jsonDecode(response.body);
+    UserService.user = User.fromJson(json);
+    Navigator.of(context).pop();
   }
 
   @override

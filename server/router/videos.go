@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -24,6 +25,7 @@ import (
 
 func addVideoSubroutes(s *mux.Router) {
 	s.HandleFunc("/videos", getAllVideos).Methods("GET")
+	s.HandleFunc("/videos/random/{count}", getRandomVideos).Methods("GET")
 	s.HandleFunc("/videos/{id}", getVideoById).Methods("GET")
 	s.HandleFunc("/videos/user/{id}", getVideosByUserId).Methods("GET")
 	s.HandleFunc("/videos", createVideo).Methods("POST")
@@ -111,6 +113,35 @@ func getAllVideos(w http.ResponseWriter, r *http.Request) {
 	query := []bson.M{
 		{"$lookup": bson.M{"from": "users", "localField": "user", "foreignField": "_id", "as": "user"}},
 		{"$unwind": "$user"}}
+
+	result, err := db.VideosCollection.Aggregate(context.TODO(), query)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err = result.All(context.TODO(), &videos); err != nil {
+		panic(err)
+	}
+
+	json.NewEncoder(w).Encode(videos)
+}
+
+func getRandomVideos(w http.ResponseWriter, r *http.Request) {
+	var videos []bson.M
+	params := mux.Vars(r)
+
+	count, err := strconv.Atoi(params["count"])
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	query := []bson.M{
+		{"$lookup": bson.M{"from": "users", "localField": "user", "foreignField": "_id", "as": "user"}},
+		{"$unwind": "$user"},
+		{"$sample": bson.M{"size": count}},
+	}
 
 	result, err := db.VideosCollection.Aggregate(context.TODO(), query)
 

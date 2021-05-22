@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+import 'package:frontend/services/user_service.dart';
 import 'package:frontend/views/change_password.dart';
 import 'package:frontend/views/edit_profile.dart';
 import 'package:frontend/views/login.dart';
@@ -9,8 +10,10 @@ class SettingsView extends StatefulWidget {
 }
 
 class _SettingsViewState extends State<SettingsView> {
-  void logOut(ctx) {
-    Navigator.push(ctx, MaterialPageRoute(builder: (ctx) => LoginView()));
+  void logOut() {
+    UserService.logout().then((value) => {
+      Navigator.push(context, MaterialPageRoute(builder: (context) => LoginView()))
+    });
   }
 
   @override
@@ -25,7 +28,7 @@ class _SettingsViewState extends State<SettingsView> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               FlatButton(
-                onPressed: () => logOut(context),
+                onPressed: logOut,
                 child: Text(
                   "LOG OUT", 
                   style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 2),

@@ -1,5 +1,10 @@
+import 'dart:convert';
+
 import "package:flutter/material.dart";
 import 'package:frontend/components/error.dart';
+import 'package:frontend/models/user.dart';
+import 'package:frontend/services/user_service.dart';
+import 'package:http/http.dart' as http;
 
 class ChangePasswordView extends StatefulWidget {
   @override
@@ -12,10 +17,34 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
 
   String error;
 
-  void handleChangePassword() {
-    setState(() {
-      this.error = null;
-    });
+  void handleChangePassword() async {
+    setState(() {this.error = null;});
+
+    var response = await http.put(
+      Uri.http("localhost:8000", "/api/users/${UserService.user?.id}/password"),
+      body: jsonEncode(<String, dynamic>{
+        "old": _oldPasswordField.text,
+        "new": _newPasswordField.text,
+      })
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      switch (response.statusCode) {
+        case 400:
+          setState(() {this.error = response.body.trim();});
+          break;
+        default:
+          print(response.body);
+          setState(() {this.error = "Server error";});
+          break;
+      }
+
+      return;
+    }
+    
+    var json = await jsonDecode(response.body);
+    UserService.user = User.fromJson(json);
+    Navigator.of(context).pop();
   }
 
   @override

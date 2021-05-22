@@ -1,8 +1,26 @@
 import "package:flutter/material.dart";
+import 'package:frontend/services/user_service.dart';
 import 'package:frontend/views/login.dart';
 import 'package:frontend/views/register.dart';
+import 'package:frontend/views/tabs.dart';
 
-class StartView extends StatelessWidget {
+class StartView extends StatefulWidget {
+  @override
+  _StartViewState createState() => _StartViewState(); 
+}
+
+class _StartViewState extends State<StartView> {
+  @override
+  void initState() {
+    UserService.setUser().then((value) => {
+      if (UserService.isLoggedIn) {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => TabsView()))
+      }
+    });
+
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

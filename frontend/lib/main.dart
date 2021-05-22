@@ -1,9 +1,13 @@
+import 'dart:io';
+
 import "package:flutter/material.dart";
+import 'package:frontend/services/user_service.dart';
 import 'package:frontend/views/start.dart';
 
 void main() {
   runApp(MyApp());
 }
+
 
 class MyApp extends StatelessWidget {
   @override

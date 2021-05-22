@@ -1,10 +1,20 @@
 import 'dart:async';
 
 import "package:flutter/material.dart";
+import 'package:frontend/models/user.dart';
+import 'package:frontend/models/video.dart';
+import 'package:frontend/services/user_service.dart';
+import 'package:frontend/utils/utils.dart';
+import 'package:frontend/views/tabs.dart';
 import 'package:frontend/views/user_detail.dart';
 import 'package:video_player/video_player.dart';
+import 'package:http/http.dart' as http;
 
 class VideoDetailView extends StatefulWidget {
+  final Video video;
+
+  VideoDetailView({Key key, this.video}): super(key: key);
+
   @override
   _VideoDetailViewState createState() => _VideoDetailViewState();
 }
@@ -24,7 +34,7 @@ class _VideoDetailViewState extends State<VideoDetailView> {
   @override
   void initState() {
      _controller = VideoPlayerController.network(
-      'https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4',
+      'http://localhost:8000/uploads/${Utils.normalizeUrl(widget.video.fileUrl)}'
     );
 
     _initializeVideoPlayerFuture = _controller.initialize();
@@ -35,6 +45,8 @@ class _VideoDetailViewState extends State<VideoDetailView> {
       this._controller.play();
     }
 
+    this.isLiked = widget.video.likes.contains(UserService.user?.id);
+
     super.initState();
   }
 
@@ -43,6 +55,29 @@ class _VideoDetailViewState extends State<VideoDetailView> {
     _controller.dispose();
 
     super.dispose();
+  }
+
+  void handleDeleteVideo() async {
+    await showDialog(
+      context: context,
+      builder: (context) => new AlertDialog(
+        title: Text('Delete video?'),
+        content: Text("Confirm the deletion of this this video."),
+        actions: [
+          FlatButton(
+            onPressed: () async {
+              await http.delete(Uri.http("localhost:8000", "/api/videos/${widget.video.id}"));
+              Navigator.push(context, MaterialPageRoute(builder: (context) => TabsView()));
+            },
+            child: Text('Confirm'),
+          ),
+          FlatButton(
+            onPressed: () {Navigator.of(context, rootNavigator: true).pop();},
+            child: Text('Cancel'),
+          ),
+        ],
+      ),
+    );
   }
 
   void togglePlay() {
@@ -55,6 +90,12 @@ class _VideoDetailViewState extends State<VideoDetailView> {
         this._controller.play();
       }
     });
+  }
+
+  void toggleLike() async {
+    var response = await http.put(Uri.http("localhost:8000", "/api/videos/${widget.video?.id}/toggle-like/${UserService.user?.id}"));
+
+    this.isLiked = !this.isLiked;
   }
 
   void setDuration(duration) {
@@ -110,7 +151,6 @@ class _VideoDetailViewState extends State<VideoDetailView> {
                       Future.delayed(Duration.zero, () async {
                         this.setDuration(this._controller.value.duration);
                       });
-
                       return AspectRatio(
                         aspectRatio: _controller.value.aspectRatio,
                         child: Stack(
@@ -131,7 +171,7 @@ class _VideoDetailViewState extends State<VideoDetailView> {
                                   children: [
                                     Icon(Icons.remove_red_eye, size: 14, color: Colors.white,),
                                     Padding(padding: EdgeInsets.only(right: 4)),
-                                    Text("3K", style: TextStyle(color: Colors.white, fontSize: 14),),
+                                    Text(widget.video.views.toString(), style: TextStyle(color: Colors.white, fontSize: 14),),
                                   ],
                                 ),
                               ),
@@ -268,16 +308,19 @@ class _VideoDetailViewState extends State<VideoDetailView> {
                 child: Column(
                   children: [
                     Text(
-                      "This is the title of my video.",
+                      widget.video?.title,
                       style: TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                     ),
                     Padding(padding: EdgeInsets.symmetric(vertical: 12)),
-                    Container(
-                      height: 270,
+                    ConstrainedBox(
+                      constraints: new BoxConstraints(
+                        maxHeight: 270
+                      ),
                       child: SingleChildScrollView(
                         scrollDirection: Axis.vertical,
-                        child: Text('''It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as opposed to using 'Content here, content here', making it look like readable English. Many desktop publishing packages and web page editors now use Lorem Ipsum as their default model text, and a search for 'lorem ipsum' will uncover many web sites still in their infancy. Various versions have evolved over the years, sometimes by accident, sometimes on purpose (injected humour and the like).''',
+                        child: Text(
+                          widget.video?.description,
                           style: TextStyle(fontSize: 18, color: Colors.black.withAlpha(180)),
                           textAlign: TextAlign.center,
                         ),
@@ -291,23 +334,30 @@ class _VideoDetailViewState extends State<VideoDetailView> {
                           flex: 1,
                           child: InkWell(
                             onTap: () {
-                              Navigator.push(context, MaterialPageRoute(builder: (context) => UserDetailView()));
+                              Navigator.push(context, MaterialPageRoute(builder: (context) => UserDetailView(
+                                user: User.fromJson(widget.video.user))
+                            ));
                             },
                             child: Text(
-                              "John Doe from MO", 
+                              widget.video?.user["name"], 
                               style: TextStyle(color: Colors.black, fontWeight: FontWeight.w500, fontSize: 18),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ),
-                        IconButton(
-                          icon: Icon(this.isLiked ? Icons.favorite : Icons.favorite_outline, color: Colors.amber,), 
-                          onPressed: () {
-                            setState(() {
-                              this.isLiked = !this.isLiked;
-                            });
-                          }),
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: Icon(this.isLiked ? Icons.favorite : Icons.favorite_outline, color: Colors.amber,), 
+                              onPressed: toggleLike),
+                            UserService.isAuthenticatedJSON(widget.video.user) ?
+                            IconButton(
+                              icon: Icon(Icons.delete), 
+                              onPressed: handleDeleteVideo,
+                            ) : Container(),
+                          ]
+                        ),
                       ],
                     )
                   ],
